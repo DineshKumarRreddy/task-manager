@@ -14,6 +14,10 @@ const descendingOrder = (tasks) => {
     return tasks.slice().sort((a, b) => new Date(b.createdOn) - new Date(a.createdOn));
 }
 
+const isValidpriority = (priority) => {
+    return !['low', 'medium', 'high'].includes(priority?.toLowerCase());
+}
+
 app.get('/tasks', (req, res) => {
     let allTasks = tasks;
     const { completed, sortEle, order } = req.query;
@@ -46,7 +50,6 @@ app.get('/tasks/:taskId', (req, res) => {
 
 app.post('/tasks', (req, res) => {
     const { body } = req;
-    console.log(body);
     const { title, description, completed, priority } = body;
     if (typeof title !== 'string' ||
         typeof description !== 'string' ||
@@ -57,6 +60,9 @@ app.post('/tasks', (req, res) => {
             {
                 message: 'Invalid body. "title" and "description" should be strings, and "completed" should be a boolean.'
             });
+    }
+    if (priority !== undefined && priority !== null && isValidpriority(priority)) {
+        return res.status(400).json({ message: 'Invalid priority level. Allowed values are: "low", "medium", "high".' });
     }
     const task = {
         "id": Date.now(),
@@ -78,6 +84,9 @@ app.put('/tasks/:taskId', (req, res) => {
     const { title, description, completed, priority } = body;
     if (typeof title !== 'string' || typeof description !== 'string' || typeof completed !== 'boolean' || !title || !description) {
         return res.status(400).json({ message: 'Invalid body. "title" and "description" should be strings, and "completed" should be a boolean.' });
+    }
+    if (priority !== undefined && priority !== null && isValidpriority(priority)) {
+        return res.status(400).json({ message: 'Invalid priority level. Allowed values are: "low", "medium", "high".' });
     }
     const taskId = parseInt(req.params.taskId);
     const taskIndex = tasks.findIndex(task => task.id === taskId);
@@ -112,12 +121,10 @@ app.delete('/tasks/:taskId', (req, res) => {
 
 app.get('/tasks/priority/:level', (req, res) => {
     const { level } = req.params;
-
-    if (!['low', 'medium', 'high'].includes(level)) {
+    if (isValidpriority(level)) {
         return res.status(400).json({ message: 'Invalid priority level. Allowed values are: "low", "medium", "high".' });
     }
-
-    const filteredTasks = tasks.filter(task => task.priority === level);
+    const filteredTasks = tasks.filter(task => task.priority?.toLowerCase() === level?.toLowerCase());
 
     res.status(200).json(filteredTasks);
 });
